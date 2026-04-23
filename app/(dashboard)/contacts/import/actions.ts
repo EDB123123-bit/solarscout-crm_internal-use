@@ -142,6 +142,12 @@ export async function commitImportAction(input: {
     address: string | null
     lead_type: string | null
     surface_area: string | null
+    company_roof_picture: string | null
+    general_phone: string | null
+    website: string | null
+    nace_industry: string | null
+    contact_function: string | null
+    linkedin_url: string | null
   }[] = []
 
   for (const row of normalized) {
@@ -161,6 +167,12 @@ export async function commitImportAction(input: {
       address: row.address ?? null,
       lead_type: row.lead_type ?? null,
       surface_area: row.surface_area ?? null,
+      company_roof_picture: row.company_roof_picture ?? null,
+      general_phone: row.general_phone ?? null,
+      website: row.website ?? null,
+      nace_industry: row.nace_industry ?? null,
+      contact_function: row.contact_function ?? null,
+      linkedin_url: row.linkedin_url ?? null,
     })
   }
 

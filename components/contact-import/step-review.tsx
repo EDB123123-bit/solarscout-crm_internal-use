@@ -39,7 +39,7 @@ export function StepReview({
   onConfirm,
   submitting,
 }: Props) {
-  const visibleRows = validated.filter((r) => r.status !== 'duplicate')
+  const visibleRows = validated
   const selectableRows = visibleRows.filter((r) => r.status === 'valid')
   const selectedCount = selectableRows.filter((r) =>
     selectedIndices.has(r._rowIndex)
@@ -52,8 +52,7 @@ export function StepReview({
       <CardHeader>
         <CardTitle>Controleer en bevestig</CardTitle>
         <CardDescription>
-          Duplicaten worden automatisch uitgesloten en kunnen niet worden
-          geïmporteerd.
+          Contacten die al bestaan worden aangeduid als &lsquo;Al aanwezig&rsquo; en worden overgeslagen bij de import.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -92,17 +91,23 @@ export function StepReview({
               )}
               {visibleRows.map((row) => {
                 const isValid = row.status === 'valid'
+                const isDuplicate = row.status === 'duplicate'
                 return (
-                  <TableRow key={row._rowIndex}>
+                  <TableRow
+                    key={row._rowIndex}
+                    className={isDuplicate ? 'opacity-60' : undefined}
+                  >
                     <TableCell>
-                      <Checkbox
-                        disabled={!isValid}
-                        checked={
-                          isValid && selectedIndices.has(row._rowIndex)
-                        }
-                        onCheckedChange={() => onToggleRow(row._rowIndex)}
-                        aria-label={`Selecteer rij ${row._rowIndex + 1}`}
-                      />
+                      {isDuplicate ? (
+                        <div className="w-4" />
+                      ) : (
+                        <Checkbox
+                          disabled={!isValid}
+                          checked={isValid && selectedIndices.has(row._rowIndex)}
+                          onCheckedChange={() => onToggleRow(row._rowIndex)}
+                          aria-label={`Selecteer rij ${row._rowIndex + 1}`}
+                        />
+                      )}
                     </TableCell>
                     <TableCell>{row.first_name ?? '—'}</TableCell>
                     <TableCell>{row.last_name ?? '—'}</TableCell>
@@ -127,9 +132,13 @@ export function StepReview({
           </Button>
           <Button
             onClick={onConfirm}
-            disabled={submitting || selectedCount === 0}
+            disabled={submitting}
           >
-            {submitting ? 'Contacten importeren…' : 'Importeren'}
+            {submitting
+              ? 'Bezig…'
+              : selectedCount > 0
+                ? `${selectedCount} contact${selectedCount === 1 ? '' : 'en'} importeren`
+                : 'Doorgaan'}
           </Button>
         </div>
       </CardContent>
@@ -190,6 +199,9 @@ const REASON_LABEL: Record<RowReason, string> = {
 function StatusBadge({ row }: { row: ValidatedRow }) {
   if (row.status === 'valid') {
     return <Badge variant="outline">Geldig</Badge>
+  }
+  if (row.status === 'duplicate') {
+    return <Badge variant="secondary">Al aanwezig</Badge>
   }
   const label = row.reasons[0] ? REASON_LABEL[row.reasons[0]] : 'Ongeldig'
   return <Badge variant="destructive">{label}</Badge>

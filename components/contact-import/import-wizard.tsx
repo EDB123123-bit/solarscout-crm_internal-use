@@ -139,6 +139,12 @@ export function ImportWizard({ campaignId }: Props) {
           if (r.address) rest.address = r.address
           if (r.lead_type) rest.lead_type = r.lead_type
           if (r.surface_area) rest.surface_area = r.surface_area
+          if (r.company_roof_picture) rest.company_roof_picture = r.company_roof_picture
+          if (r.general_phone) rest.general_phone = r.general_phone
+          if (r.website) rest.website = r.website
+          if (r.nace_industry) rest.nace_industry = r.nace_industry
+          if (r.contact_function) rest.contact_function = r.contact_function
+          if (r.linkedin_url) rest.linkedin_url = r.linkedin_url
           return rest
         })
       const res = await commitImportAction({ campaignId, rows })

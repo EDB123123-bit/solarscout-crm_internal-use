@@ -119,33 +119,68 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
           <CardHeader>
             <CardTitle>Contactgegevens</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <InfoRow label="E-mail" value={contact.email} />
-            <InfoRow label="Telefoon" value={contact.phone} />
-            <InfoRow label="Bedrijf" value={contact.company_name} />
-            <InfoRow label="Adres" value={contact.address} />
-            <InfoRow label="Type lead" value={contact.lead_type} />
-            <InfoRow label="Oppervlakte" value={contact.surface_area} />
-            <div className="flex items-center gap-2 pt-1">
-              <span className="text-muted-foreground">Status</span>
-              <Badge variant={CONTACT_STATUS_VARIANT[contact.status] ?? 'outline'}>
-                {CONTACT_STATUS_LABEL[contact.status] ?? contact.status}
-              </Badge>
+          <CardContent className="space-y-4 text-sm">
+
+            {/* Bedrijf */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bedrijf</div>
+              <InfoRow label="Naam" value={contact.company_name} />
+              <InfoRow label="Adres" value={contact.address} />
+              <InfoRow label="Telefoon" value={contact.general_phone} />
+              <LinkRow label="Website" href={contact.website} display={contact.website} />
+              <InfoRow label="NACE-sector" value={contact.nace_industry} />
+              {contact.company_roof_picture && (
+                <div className="pt-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={contact.company_roof_picture}
+                    alt="Dakfoto"
+                    style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)', display: 'block' }}
+                  />
+                </div>
+              )}
             </div>
-            {contact.unsubscribed_at && (
-              <div
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-xs"
-                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                  <circle cx="8" cy="8" r="7" stroke="#EF4444" strokeWidth="1.5" />
-                  <line x1="8" y1="5" x2="8" y2="8.5" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
-                  <circle cx="8" cy="11" r="0.75" fill="#EF4444" />
-                </svg>
-                Uitgeschreven op {new Date(contact.unsubscribed_at).toLocaleDateString('nl-BE')}
+
+            <hr style={{ borderColor: 'var(--border)' }} />
+
+            {/* Contactpersoon */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Contactpersoon</div>
+              <InfoRow label="Functie" value={contact.contact_function} />
+              <InfoRow label="E-mail" value={contact.email} />
+              <InfoRow label="Telefoon" value={contact.phone} />
+              <LinkRow label="LinkedIn" href={contact.linkedin_url} display="LinkedIn profiel" />
+            </div>
+
+            <hr style={{ borderColor: 'var(--border)' }} />
+
+            {/* Lead & status */}
+            <div className="space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lead & status</div>
+              <InfoRow label="Type lead" value={contact.lead_type} />
+              <InfoRow label="Oppervlakte" value={contact.surface_area} />
+              <div className="flex items-center gap-2 pt-1">
+                <span className="w-28 shrink-0 text-muted-foreground">Status</span>
+                <Badge variant={CONTACT_STATUS_VARIANT[contact.status] ?? 'outline'}>
+                  {CONTACT_STATUS_LABEL[contact.status] ?? contact.status}
+                </Badge>
               </div>
-            )}
-            <div className="pt-2">
+              {contact.unsubscribed_at && (
+                <div
+                  className="flex items-center gap-2 rounded-md px-3 py-2 text-xs"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#FCA5A5' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                    <circle cx="8" cy="8" r="7" stroke="#EF4444" strokeWidth="1.5" />
+                    <line x1="8" y1="5" x2="8" y2="8.5" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="8" cy="11" r="0.75" fill="#EF4444" />
+                  </svg>
+                  Uitgeschreven op {new Date(contact.unsubscribed_at).toLocaleDateString('nl-BE')}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-1">
               <MeetingBookedButton
                 contactId={contact.id}
                 campaignId={campaignId}
@@ -247,6 +282,26 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
     <div className="flex gap-2">
       <span className="w-28 shrink-0 text-muted-foreground">{label}</span>
       <span>{value}</span>
+    </div>
+  )
+}
+
+function LinkRow({ label, href, display }: { label: string; href: string | null | undefined; display: string | null | undefined }) {
+  if (!href || !display) return null
+  const url = href.startsWith('http') ? href : `https://${href}`
+  return (
+    <div className="flex gap-2">
+      <span className="w-28 shrink-0 text-muted-foreground">{label}</span>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'var(--sc-orange, #f97316)', textDecoration: 'none', wordBreak: 'break-all' }}
+        onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'underline' }}
+        onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'none' }}
+      >
+        {display}
+      </a>
     </div>
   )
 }

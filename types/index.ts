@@ -47,58 +47,76 @@ export type Database = {
           address: string | null
           campaign_id: string
           company_name: string | null
+          company_roof_picture: string | null
+          contact_function: string | null
           created_at: string
           email: string
           email_valid: boolean
           first_name: string
+          general_phone: string | null
           id: string
           last_name: string | null
           lead_type: string | null
+          linkedin_url: string | null
           meeting_booked: boolean
           meeting_booked_at: string | null
+          nace_industry: string | null
           phone: string | null
           status: string
           surface_area: string | null
           unsubscribed_at: string | null
           unsubscribed_source: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
           campaign_id: string
           company_name?: string | null
+          company_roof_picture?: string | null
+          contact_function?: string | null
           created_at?: string
           email: string
           email_valid?: boolean
           first_name: string
+          general_phone?: string | null
           id?: string
           last_name?: string | null
           lead_type?: string | null
+          linkedin_url?: string | null
           meeting_booked?: boolean
           meeting_booked_at?: string | null
+          nace_industry?: string | null
           phone?: string | null
           status?: string
           surface_area?: string | null
           unsubscribed_at?: string | null
           unsubscribed_source?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
           campaign_id?: string
           company_name?: string | null
+          company_roof_picture?: string | null
+          contact_function?: string | null
           created_at?: string
           email?: string
           email_valid?: boolean
           first_name?: string
+          general_phone?: string | null
           id?: string
           last_name?: string | null
           lead_type?: string | null
+          linkedin_url?: string | null
           meeting_booked?: boolean
           meeting_booked_at?: string | null
+          nace_industry?: string | null
           phone?: string | null
           status?: string
           surface_area?: string | null
           unsubscribed_at?: string | null
           unsubscribed_source?: string | null
+          website?: string | null
         }
         Relationships: [
           {

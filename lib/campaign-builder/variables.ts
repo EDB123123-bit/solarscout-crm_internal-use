@@ -4,6 +4,7 @@ export type RenderVariable = {
   token: string
   label: string
   field: keyof Contact
+  isImage?: boolean
 }
 
 export const RENDER_VARIABLES: RenderVariable[] = [
@@ -12,6 +13,7 @@ export const RENDER_VARIABLES: RenderVariable[] = [
   { token: '{{address}}', label: 'Adres', field: 'address' },
   { token: '{{lead_type}}', label: 'Leadtype', field: 'lead_type' },
   { token: '{{surface_area}}', label: 'Oppervlakte', field: 'surface_area' },
+  { token: '{{company_roof_picture}}', label: 'Dakfoto', field: 'company_roof_picture', isImage: true },
 ]
 
 export function resolveVariables(
@@ -22,7 +24,10 @@ export function resolveVariables(
     const v = RENDER_VARIABLES.find((r) => r.field === key)
     if (!v) return `{{${key}}}`
     const raw = contact?.[v.field]
-    if (typeof raw === 'string' && raw.length > 0) return raw
+    if (typeof raw === 'string' && raw.length > 0) {
+      if (v.isImage) return `<img src="${raw}" alt="Dakfoto" width="600" style="max-width:100%;height:auto;border-radius:4px;">`
+      return raw
+    }
     if (typeof raw === 'number') return String(raw)
     return `[${v.label}]`
   })

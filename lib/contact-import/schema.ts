@@ -7,6 +7,12 @@ export const EXPECTED_COLUMNS = [
   'address',
   'lead_type',
   'surface_area',
+  'company_roof_picture',
+  'general_phone',
+  'website',
+  'nace_industry',
+  'contact_function',
+  'linkedin_url',
 ] as const
 
 export type ExpectedColumn = (typeof EXPECTED_COLUMNS)[number]
@@ -22,6 +28,12 @@ export const COLUMN_LABELS: Record<ExpectedColumn, string> = {
   address: 'Adres',
   lead_type: 'Leadtype',
   surface_area: 'Oppervlakte',
+  company_roof_picture: 'Dakfoto',
+  general_phone: 'Algemeen telefoon',
+  website: 'Website',
+  nace_industry: 'NACE-sector',
+  contact_function: 'Functie',
+  linkedin_url: 'LinkedIn',
 }
 
 export type RawRow = Record<string, string | number | null>
