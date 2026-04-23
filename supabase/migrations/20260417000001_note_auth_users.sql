@@ -1,0 +1,4 @@
+-- T-07: User table is managed by Supabase Auth (auth.users).
+-- Available fields: id (uuid), email, created_at, etc.
+-- All other tables reference auth.users(id) as user_id.
+-- No public.users table needed.
