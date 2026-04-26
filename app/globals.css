@@ -174,3 +174,7 @@
   background: var(--muted) !important;
   color: var(--foreground) !important;
 }
+.kpi-card-clickable:hover {
+  border-color: rgba(255,165,0,0.4) !important;
+  background: rgba(255,165,0,0.04) !important;
+}

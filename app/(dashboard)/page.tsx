@@ -31,6 +31,17 @@ export default async function DashboardPage() {
     .eq('meeting_booked', true)
     .eq('campaigns.user_id', user.id)
 
+  // KPI: tasks due today
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  const todayEnd   = new Date(); todayEnd.setHours(23, 59, 59, 999)
+  const { count: tasksDueToday } = await supabase
+    .from('contact_tasks')
+    .select('id, campaigns!inner(user_id)', { count: 'exact', head: true })
+    .eq('campaigns.user_id', user.id)
+    .is('completed_at', null)
+    .gte('due_at', todayStart.toISOString())
+    .lte('due_at', todayEnd.toISOString())
+
   const sent = emailsSent ?? 0
   const replies = repliesCount ?? 0
   const replyRate = sent > 0 ? ((replies / sent) * 100).toFixed(1) + '%' : '—'
@@ -124,7 +135,21 @@ export default async function DashboardPage() {
       <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 32, flex: 1 }}>
 
         {/* KPI grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          <Link href="/taken" style={{ textDecoration: 'none', display: 'block' }}>
+            <KpiCard
+              label="Taken vandaag"
+              value={tasksDueToday ?? 0}
+              valueColor={(tasksDueToday ?? 0) > 0 ? '#FFA500' : undefined}
+              icon={
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FFA500" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1.5" y="3" width="15" height="13" rx="1.5" />
+                  <path d="M1.5 7h15M5.5 1v4M12.5 1v4M6 11l2 2 4-4" />
+                </svg>
+              }
+              clickable
+            />
+          </Link>
           <KpiCard
             label="E-mails verstuurd"
             value={sent}
@@ -295,14 +320,17 @@ function KpiCard({
   value,
   icon,
   valueColor,
+  clickable,
 }: {
   label: string
   value: string | number
   icon: React.ReactNode
   valueColor?: string
+  clickable?: boolean
 }) {
   return (
     <div
+      className={clickable ? 'kpi-card-clickable' : undefined}
       style={{
         background: 'var(--card)',
         border: '1px solid var(--border)',
@@ -313,6 +341,8 @@ function KpiCard({
         gap: 16,
         position: 'relative',
         overflow: 'hidden',
+        transition: clickable ? 'border-color 0.15s, background 0.15s' : undefined,
+        cursor: clickable ? 'pointer' : undefined,
       }}
     >
       {/* Subtle glow top-right */}

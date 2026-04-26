@@ -102,6 +102,7 @@ async function processRow(
     .maybeSingle()
 
   if (stepErr || !step) throw new Error(`Stap niet gevonden voor index ${row.step_index}: ${stepErr?.message}`)
+  if (!step.subject || !step.body_html) throw new Error(`Stap ${row.step_index} heeft geen e-mailinhoud.`)
 
   // 4. Resolve template variables
   const subject = resolveVariables(step.subject, contact)
@@ -173,24 +174,24 @@ async function processRow(
       .eq('id', row.contact_id)
   }
 
-  // 10. Schedule next follow-up if a sequence step exists for next index
-  const nextIndex = row.step_index + 1
-  if (nextIndex <= 2) {
-    const { data: nextStep } = await db
-      .from('sequence_steps')
-      .select('delay_business_days')
-      .eq('campaign_id', campaign.id)
-      .eq('step_index', nextIndex)
-      .maybeSingle()
+  // 10. Schedule next email follow-up if one exists after the current step
+  const { data: nextStep } = await db
+    .from('sequence_steps')
+    .select('step_index, delay_business_days, condition_open_required')
+    .eq('campaign_id', campaign.id)
+    .eq('step_type', 'email')
+    .gt('step_index', row.step_index)
+    .order('step_index', { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
-    if (nextStep) {
-      const scheduledAt = nextSendSlot(new Date(), nextStep.delay_business_days).toISOString()
-      await db.from('scheduled_sends').insert({
-        contact_id: row.contact_id,
-        step_index: nextIndex,
-        scheduled_at: scheduledAt,
-        status: 'pending',
-      })
-    }
+  if (nextStep) {
+    const scheduledAt = nextSendSlot(new Date(), nextStep.delay_business_days).toISOString()
+    await db.from('scheduled_sends').insert({
+      contact_id: row.contact_id,
+      step_index: nextStep.step_index,
+      scheduled_at: scheduledAt,
+      status: 'pending',
+    })
   }
 }

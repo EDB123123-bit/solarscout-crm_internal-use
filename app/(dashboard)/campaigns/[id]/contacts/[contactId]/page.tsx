@@ -25,6 +25,7 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
     { data: eventsRaw },
     { data: repliesRaw },
     { data: stepsRaw },
+    { data: completedTasksRaw },
   ] = await Promise.all([
     supabase
       .from('contacts')
@@ -47,6 +48,12 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
       .select('*')
       .eq('campaign_id', campaignId)
       .order('step_index', { ascending: true }),
+    supabase
+      .from('contact_tasks')
+      .select('id, task_type, completed_at, notes')
+      .eq('contact_id', contactId)
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: true }),
   ])
 
   if (!contactRaw) redirect(`/campaigns/${campaignId}`)
@@ -65,6 +72,7 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
     | { kind: 'clicked'; stepIndex: number; url: string | null; timestamp: string }
     | { kind: 'replied'; body: string | null; timestamp: string }
     | { kind: 'meeting'; timestamp: string }
+    | { kind: 'task_done'; taskType: string; notes: string | null; timestamp: string }
 
   const timeline: TimelineItem[] = []
 
@@ -84,6 +92,10 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
 
   if (contact.meeting_booked && contact.meeting_booked_at) {
     timeline.push({ kind: 'meeting', timestamp: contact.meeting_booked_at })
+  }
+
+  for (const t of (completedTasksRaw ?? [])) {
+    timeline.push({ kind: 'task_done', taskType: t.task_type, notes: t.notes ?? null, timestamp: t.completed_at })
   }
 
   timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
@@ -263,6 +275,21 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
                           </div>
                         </div>
                       )}
+                      {item.kind === 'task_done' && (
+                        <div>
+                          <span className="font-medium">
+                            {item.taskType === 'linkedin' ? 'LinkedIn-actie afgerond' : 'Telefoongesprek afgerond'}
+                          </span>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(item.timestamp).toLocaleString('nl-BE')}
+                          </div>
+                          {item.notes && (
+                            <div className="mt-1 rounded-md px-3 py-2 text-xs" style={{ background: 'var(--muted)', borderLeft: '2px solid var(--sc-orange, #f97316)' }}>
+                              {item.notes}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ol>
@@ -296,9 +323,8 @@ function LinkRow({ label, href, display }: { label: string; href: string | null 
         href={url}
         target="_blank"
         rel="noopener noreferrer"
+        className="hover:underline"
         style={{ color: 'var(--sc-orange, #f97316)', textDecoration: 'none', wordBreak: 'break-all' }}
-        onMouseOver={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'underline' }}
-        onMouseOut={(e) => { (e.currentTarget as HTMLAnchorElement).style.textDecoration = 'none' }}
       >
         {display}
       </a>

@@ -26,7 +26,15 @@ export async function markMeetingBooked(contactId: string, campaignId: string) {
     .update({ meeting_booked: true, meeting_booked_at: new Date().toISOString() })
     .eq('id', contactId)
 
+  // Remove pending tasks — completed tasks (with completed_at) are left intact
+  await supabase
+    .from('contact_tasks')
+    .delete()
+    .eq('contact_id', contactId)
+    .is('completed_at', null)
+
   revalidatePath(`/campaigns/${campaignId}/contacts/${contactId}`)
   revalidatePath(`/campaigns/${campaignId}`)
+  revalidatePath('/taken')
   revalidatePath('/')
 }

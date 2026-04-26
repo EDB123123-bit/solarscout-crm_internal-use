@@ -6,9 +6,10 @@ import {
 } from '@/components/campaign-builder/wizard-shell'
 import { StepName } from '@/components/campaign-builder/step-name'
 import { StepImport } from '@/components/campaign-builder/step-import'
+import { StepSequence } from '@/components/campaign-builder/step-sequence'
 import { StepTemplate } from '@/components/campaign-builder/step-template'
 import { StepReview } from '@/components/campaign-builder/step-review'
-import type { Campaign, Contact, SequenceStep, StepIndex } from '@/types'
+import type { Campaign, Contact, SequenceStep } from '@/types'
 
 type SearchParams = Promise<{
   step?: string
@@ -16,15 +17,9 @@ type SearchParams = Promise<{
   stepIndex?: string
 }>
 
-function parseStep(raw: string | undefined): 'name' | 'import' | 'template' | 'review' {
-  if (raw === 'import' || raw === 'template' || raw === 'review') return raw
+function parseStep(raw: string | undefined): 'name' | 'import' | 'sequence' | 'template' | 'review' {
+  if (raw === 'import' || raw === 'sequence' || raw === 'template' || raw === 'review') return raw
   return 'name'
-}
-
-function parseStepIndex(raw: string | undefined): StepIndex {
-  if (raw === '1') return 1
-  if (raw === '2') return 2
-  return 0
 }
 
 export default async function CampaignBuilderPage({
@@ -41,7 +36,7 @@ export default async function CampaignBuilderPage({
   const params = await searchParams
   const step = parseStep(params.step)
   const campaignId = params.campaignId
-  const stepIndex = parseStepIndex(params.stepIndex)
+  const stepIndex = params.stepIndex ? Number(params.stepIndex) : 0
 
   let campaign: Campaign | null = null
   if (campaignId) {
@@ -55,12 +50,11 @@ export default async function CampaignBuilderPage({
     campaign = data as Campaign
   }
 
-  // All non-name steps require a campaign
   if (step !== 'name' && !campaign) {
     redirect('/campaigns/new')
   }
 
-  const dot = resolveDotIndex(step, params.stepIndex)
+  const dot = resolveDotIndex(step)
 
   if (step === 'name') {
     return (
@@ -82,6 +76,32 @@ export default async function CampaignBuilderPage({
     )
   }
 
+  if (step === 'sequence' && campaign) {
+    const [{ data: steps }, { data: firstContactRow }] = await Promise.all([
+      supabase
+        .from('sequence_steps')
+        .select('*')
+        .eq('campaign_id', campaign.id)
+        .order('step_index', { ascending: true }),
+      supabase
+        .from('contacts')
+        .select('*')
+        .eq('campaign_id', campaign.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+    ])
+    return (
+      <WizardShell currentStep={dot}>
+        <StepSequence
+          campaignId={campaign.id}
+          steps={(steps as SequenceStep[] | null) ?? []}
+          firstContact={(firstContactRow as Contact | null) ?? null}
+        />
+      </WizardShell>
+    )
+  }
+
   if (step === 'template' && campaign) {
     const [{ data: existingStep }, { data: firstContactRow }] = await Promise.all([
       supabase
@@ -98,21 +118,6 @@ export default async function CampaignBuilderPage({
         .limit(1)
         .maybeSingle(),
     ])
-
-    // Guard: only allow stepIndex 1 if step 0 exists; stepIndex 2 if step 1 exists
-    if (stepIndex > 0) {
-      const { data: prev } = await supabase
-        .from('sequence_steps')
-        .select('id')
-        .eq('campaign_id', campaign.id)
-        .eq('step_index', stepIndex - 1)
-        .maybeSingle()
-      if (!prev) {
-        redirect(
-          `/campaigns/new?step=template&stepIndex=${stepIndex - 1}&campaignId=${campaign.id}`
-        )
-      }
-    }
 
     return (
       <WizardShell currentStep={dot}>

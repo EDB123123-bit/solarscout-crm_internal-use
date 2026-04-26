@@ -237,6 +237,51 @@ export type Database = {
           },
         ]
       }
+      contact_tasks: {
+        Row: {
+          campaign_id: string
+          completed_at: string | null
+          contact_id: string
+          created_at: string
+          due_at: string
+          id: string
+          task_type: string
+        }
+        Insert: {
+          campaign_id: string
+          completed_at?: string | null
+          contact_id: string
+          created_at?: string
+          due_at: string
+          id?: string
+          task_type: string
+        }
+        Update: {
+          campaign_id?: string
+          completed_at?: string | null
+          contact_id?: string
+          created_at?: string
+          due_at?: string
+          id?: string
+          task_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_tasks_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_tasks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_sends: {
         Row: {
           contact_id: string
@@ -275,33 +320,68 @@ export type Database = {
           },
         ]
       }
+      task_templates: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          delay_business_days: number
+          id: string
+          task_type: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          delay_business_days?: number
+          id?: string
+          task_type: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          delay_business_days?: number
+          id?: string
+          task_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_templates_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sequence_steps: {
         Row: {
-          body_html: string
+          body_html: string | null
           campaign_id: string
           condition_open_required: boolean
           delay_business_days: number
           id: string
           step_index: number
-          subject: string
+          step_type: string
+          subject: string | null
         }
         Insert: {
-          body_html: string
+          body_html?: string | null
           campaign_id: string
           condition_open_required?: boolean
           delay_business_days?: number
           id?: string
           step_index: number
-          subject: string
+          step_type?: string
+          subject?: string | null
         }
         Update: {
-          body_html?: string
+          body_html?: string | null
           campaign_id?: string
           condition_open_required?: boolean
           delay_business_days?: number
           id?: string
           step_index?: number
-          subject?: string
+          step_type?: string
+          subject?: string | null
         }
         Relationships: [
           {
@@ -419,12 +499,15 @@ export type SendStatus     = 'pending' | 'sent' | 'cancelled' | 'failed'
 export type EventType      = 'sent' | 'opened' | 'opened_proxy' | 'clicked' | 'replied'
 export type Provider       = 'gmail' | 'outlook'
 export type MailboxStatus  = 'connected' | 'disconnected'
-export type StepIndex      = 0 | 1 | 2
+export type StepIndex      = number
 
-export type Campaign        = Database['public']['Tables']['campaigns']['Row']
-export type Contact         = Database['public']['Tables']['contacts']['Row']
+export type Campaign          = Database['public']['Tables']['campaigns']['Row']
+export type Contact           = Database['public']['Tables']['contacts']['Row']
 export type MailboxConnection = Database['public']['Tables']['mailbox_connections']['Row']
-export type SequenceStep    = Database['public']['Tables']['sequence_steps']['Row']
-export type ScheduledSend   = Database['public']['Tables']['scheduled_sends']['Row']
-export type EmailEvent      = Database['public']['Tables']['email_events']['Row']
-export type Reply           = Database['public']['Tables']['replies']['Row']
+export type SequenceStep      = Database['public']['Tables']['sequence_steps']['Row']
+export type ScheduledSend     = Database['public']['Tables']['scheduled_sends']['Row']
+export type EmailEvent        = Database['public']['Tables']['email_events']['Row']
+export type Reply             = Database['public']['Tables']['replies']['Row']
+export type TaskTemplate      = Database['public']['Tables']['task_templates']['Row']
+export type ContactTask       = Database['public']['Tables']['contact_tasks']['Row']
+export type TaskType          = 'linkedin' | 'phone'

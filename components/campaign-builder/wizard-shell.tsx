@@ -1,13 +1,6 @@
 import type { ReactNode } from 'react'
 
-const STEP_LABELS = [
-  'Naam',
-  'Contacten',
-  'Initiële e-mail',
-  'Opvolging 1',
-  'Opvolging 2',
-  'Controle',
-]
+const STEP_LABELS = ['Naam', 'Contacten', 'Reeks', 'Controle']
 
 type Props = {
   currentStep: number
@@ -40,21 +33,13 @@ export function WizardShell({ currentStep, children }: Props) {
 }
 
 export function resolveDotIndex(
-  step: 'name' | 'import' | 'template' | 'review',
-  stepIndex: string | undefined
+  step: 'name' | 'import' | 'sequence' | 'template' | 'review',
 ): number {
   switch (step) {
-    case 'name':
-      return 0
-    case 'import':
-      return 1
-    case 'template': {
-      const i = Number(stepIndex ?? '0')
-      if (i === 0) return 2
-      if (i === 1) return 3
-      return 4
-    }
-    case 'review':
-      return 5
+    case 'name':     return 0
+    case 'import':   return 1
+    case 'sequence': return 2
+    case 'template': return 2
+    case 'review':   return 3
   }
 }
