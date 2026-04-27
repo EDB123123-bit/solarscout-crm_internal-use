@@ -18,6 +18,7 @@ type TaskCardProps = {
   contactId: string
   dueLabel: string
   urgent: boolean
+  linkedinTemplate: string | null
 }
 
 function LinkedInIcon() {
@@ -39,10 +40,11 @@ function PhoneIcon() {
 export function TaskCard({
   taskId, taskType, firstName, lastName, companyName,
   linkedinUrl, phone, campaignName, campaignId, contactId,
-  dueLabel, urgent,
+  dueLabel, urgent, linkedinTemplate,
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [notes, setNotes] = useState('')
+  const [copied, setCopied] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -51,6 +53,14 @@ export function TaskCard({
   useEffect(() => {
     if (expanded) textareaRef.current?.focus()
   }, [expanded])
+
+  function copyTemplate() {
+    if (!linkedinTemplate) return
+    navigator.clipboard.writeText(linkedinTemplate).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   function handleComplete() {
     startTransition(async () => {
@@ -179,6 +189,58 @@ export function TaskCard({
           flexDirection: 'column',
           gap: 10,
         }}>
+          {isLinkedIn && linkedinTemplate && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted-foreground)' }}>
+                  Berichttekst
+                </span>
+                <button
+                  type="button"
+                  onClick={copyTemplate}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '4px 10px', borderRadius: 5,
+                    border: '1px solid var(--border)',
+                    background: copied ? 'rgba(34,197,94,0.1)' : 'transparent',
+                    fontSize: 12, fontWeight: 500,
+                    color: copied ? '#22C55E' : '#0A66C2',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {copied ? (
+                    <>
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1.5 6l3 3 6-6" />
+                      </svg>
+                      Gekopieerd
+                    </>
+                  ) : (
+                    <>
+                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="4" y="4" width="8" height="9" rx="1.5" />
+                        <path d="M2 9.5V2.5A1.5 1.5 0 0 1 3.5 1h6" />
+                      </svg>
+                      Kopieer
+                    </>
+                  )}
+                </button>
+              </div>
+              <div style={{
+                background: 'rgba(10,102,194,0.06)',
+                border: '1px solid rgba(10,102,194,0.2)',
+                borderRadius: 6,
+                padding: '10px 12px',
+                fontSize: 13,
+                color: 'var(--foreground)',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {linkedinTemplate}
+              </div>
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             value={notes}

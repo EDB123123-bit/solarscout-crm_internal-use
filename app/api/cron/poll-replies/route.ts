@@ -285,6 +285,13 @@ async function persistReply(
     .eq('contact_id', contactId)
     .eq('status', 'pending')
 
+  // Remove pending tasks — completed tasks are left intact
+  await db
+    .from('contact_tasks')
+    .delete()
+    .eq('contact_id', contactId)
+    .is('completed_at', null)
+
   // Get highest sent step for email_events
   const { data: sentSends } = await db
     .from('scheduled_sends')

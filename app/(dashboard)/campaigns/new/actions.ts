@@ -33,7 +33,9 @@ function stripHtml(html: string): string {
 }
 
 export async function createCampaignAction(
-  name: string
+  name: string,
+  sendHourStart: number = 8,
+  sendHourEnd: number = 18,
 ): Promise<{ id: string }> {
   const trimmed = name.trim()
   if (trimmed.length < 2) throw new Error('Naam moet minstens 2 tekens bevatten.')
@@ -41,7 +43,7 @@ export async function createCampaignAction(
   const { supabase, user } = await requireUser()
   const { data, error } = await supabase
     .from('campaigns')
-    .insert({ user_id: user.id, name: trimmed, status: 'draft' })
+    .insert({ user_id: user.id, name: trimmed, status: 'draft', send_hour_start: sendHourStart, send_hour_end: sendHourEnd })
     .select('id')
     .single()
   if (error || !data) throw new Error(`Campagne aanmaken mislukt: ${error?.message ?? 'onbekend'}`)
@@ -52,7 +54,9 @@ export async function createCampaignAction(
 
 export async function updateCampaignNameAction(
   id: string,
-  name: string
+  name: string,
+  sendHourStart: number = 8,
+  sendHourEnd: number = 18,
 ): Promise<void> {
   const trimmed = name.trim()
   if (trimmed.length < 2) throw new Error('Naam moet minstens 2 tekens bevatten.')
@@ -60,7 +64,7 @@ export async function updateCampaignNameAction(
   const { supabase } = await requireDraftCampaign(id)
   const { error } = await supabase
     .from('campaigns')
-    .update({ name: trimmed })
+    .update({ name: trimmed, send_hour_start: sendHourStart, send_hour_end: sendHourEnd })
     .eq('id', id)
   if (error) throw new Error(`Opslaan mislukt: ${error.message}`)
 
@@ -182,6 +186,22 @@ export async function updateSequenceStepDelayAction(input: {
   revalidatePath('/campaigns/new')
 }
 
+export async function updateLinkedInTemplateAction(input: {
+  campaignId: string
+  stepId: string
+  template: string
+}): Promise<void> {
+  const { supabase } = await requireDraftCampaign(input.campaignId)
+  const { error } = await supabase
+    .from('sequence_steps')
+    .update({ linkedin_message_template: input.template.trim() || null })
+    .eq('id', input.stepId)
+    .eq('campaign_id', input.campaignId)
+  if (error) throw new Error(`Berichttekst opslaan mislukt: ${error.message}`)
+
+  revalidatePath('/campaigns/new')
+}
+
 export async function deleteSequenceStepAction(input: {
   campaignId: string
   stepId: string
@@ -225,10 +245,13 @@ export async function launchCampaignAction(
     .eq('id', campaign.id)
   if (updateError) throw new Error(`Campagne starten mislukt: ${updateError.message}`)
 
+  const startHour = (campaign as any).send_hour_start ?? 8
+  const endHour   = (campaign as any).send_hour_end   ?? 18
+
   const rows = contacts.map((c) => ({
     contact_id: c.id,
     step_index: 0,
-    scheduled_at: nextSendSlot().toISOString(),
+    scheduled_at: nextSendSlot(new Date(), 0, startHour, endHour).toISOString(),
     status: 'pending',
   }))
   const { error: insertError } = await supabase.from('scheduled_sends').insert(rows)
@@ -257,7 +280,7 @@ export async function launchCampaignAction(
           contact_id: c.id,
           campaign_id: campaignId,
           task_type: step.step_type,
-          due_at: nextSendSlot(new Date(), step.delay_business_days).toISOString(),
+          due_at: nextSendSlot(new Date(), step.delay_business_days, startHour, endHour).toISOString(),
         })
       }
     }

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TaskCard } from '@/components/taken/task-card'
+import { resolveVariables } from '@/lib/campaign-builder/variables'
 
 type TaskRow = {
   id: string
@@ -14,6 +15,7 @@ type TaskRow = {
   phone: string | null
   general_phone: string | null
   linkedin_url: string | null
+  surface_area: string | null
   campaign_name: string
 }
 
@@ -36,7 +38,7 @@ export default async function TakenPage() {
     .from('contact_tasks')
     .select(`
       id, task_type, due_at, contact_id, campaign_id,
-      contacts!inner ( first_name, last_name, company_name, phone, general_phone, linkedin_url ),
+      contacts!inner ( first_name, last_name, company_name, phone, general_phone, linkedin_url, surface_area ),
       campaigns!inner ( name, user_id )
     `)
     .eq('campaigns.user_id', user.id)
@@ -55,6 +57,7 @@ export default async function TakenPage() {
     phone: r.contacts.phone,
     general_phone: r.contacts.general_phone,
     linkedin_url: r.contacts.linkedin_url,
+    surface_area: r.contacts.surface_area,
     campaign_name: r.campaigns.name,
   }))
 
@@ -68,6 +71,41 @@ export default async function TakenPage() {
       .in('contact_id', contactIds)
     const repliedIds = new Set((replies ?? []).map((r: any) => r.contact_id))
     tasks = allTasks.filter((t) => !repliedIds.has(t.contact_id))
+  }
+
+  // Sort by email interaction count (opens/clicks) desc, then due_at asc
+  if (tasks.length > 0) {
+    const contactIds = [...new Set(tasks.map((t) => t.contact_id))]
+    const { data: events } = await supabase
+      .from('email_events')
+      .select('contact_id')
+      .in('contact_id', contactIds)
+      .in('event_type', ['opened', 'clicked'])
+    const interactionCount: Record<string, number> = {}
+    for (const e of events ?? []) {
+      interactionCount[e.contact_id] = (interactionCount[e.contact_id] ?? 0) + 1
+    }
+    tasks = tasks.sort((a, b) => {
+      const diff = (interactionCount[b.contact_id] ?? 0) - (interactionCount[a.contact_id] ?? 0)
+      if (diff !== 0) return diff
+      return new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
+    })
+  }
+
+  // Fetch LinkedIn message templates for all relevant campaigns
+  const linkedInTasks = tasks.filter(t => t.task_type === 'linkedin')
+  const campaignIds = [...new Set(linkedInTasks.map(t => t.campaign_id))]
+  const templateByCampaign: Record<string, string | null> = {}
+  if (campaignIds.length > 0) {
+    const { data: steps } = await supabase
+      .from('sequence_steps')
+      .select('campaign_id, linkedin_message_template')
+      .in('campaign_id', campaignIds)
+      .eq('step_type', 'linkedin')
+      .not('linkedin_message_template', 'is', null)
+    for (const s of steps ?? []) {
+      templateByCampaign[s.campaign_id] = s.linkedin_message_template
+    }
   }
 
   return (
@@ -106,6 +144,18 @@ export default async function TakenPage() {
 
         {tasks.map((task) => {
           const { label: dueLabel, urgent } = formatDueDate(task.due_at)
+          const rawTemplate = task.task_type === 'linkedin'
+            ? (templateByCampaign[task.campaign_id] ?? null)
+            : null
+          // Resolve {{first_name}} etc. using the contact's data
+          const resolvedTemplate = rawTemplate
+            ? resolveVariables(rawTemplate, {
+                first_name: task.first_name,
+                last_name: task.last_name ?? '',
+                company_name: task.company_name ?? '',
+                surface_area: task.surface_area ?? '',
+              } as any)
+            : null
           return (
             <TaskCard
               key={task.id}
@@ -121,6 +171,7 @@ export default async function TakenPage() {
               contactId={task.contact_id}
               dueLabel={dueLabel}
               urgent={urgent}
+              linkedinTemplate={resolvedTemplate}
             />
           )
         })}

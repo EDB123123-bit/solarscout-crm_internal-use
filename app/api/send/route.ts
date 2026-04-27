@@ -62,7 +62,7 @@ async function processRow(
   // 1. Load contact + campaign
   const { data: contact, error: contactErr } = await db
     .from('contacts')
-    .select('*, campaign:campaigns!inner(id, user_id, status)')
+    .select('*, campaign:campaigns!inner(id, user_id, status, send_hour_start, send_hour_end)')
     .eq('id', row.contact_id)
     .maybeSingle()
 
@@ -74,7 +74,7 @@ async function processRow(
     return
   }
 
-  const campaign = (contact as unknown as { campaign: { id: string; user_id: string; status: string } }).campaign
+  const campaign = (contact as unknown as { campaign: { id: string; user_id: string; status: string; send_hour_start: number; send_hour_end: number } }).campaign
 
   // Skip if campaign is paused/completed (race condition guard)
   if (campaign.status !== 'active') {
@@ -186,7 +186,7 @@ async function processRow(
     .maybeSingle()
 
   if (nextStep) {
-    const scheduledAt = nextSendSlot(new Date(), nextStep.delay_business_days).toISOString()
+    const scheduledAt = nextSendSlot(new Date(), nextStep.delay_business_days, campaign.send_hour_start ?? 8, campaign.send_hour_end ?? 18).toISOString()
     await db.from('scheduled_sends').insert({
       contact_id: row.contact_id,
       step_index: nextStep.step_index,

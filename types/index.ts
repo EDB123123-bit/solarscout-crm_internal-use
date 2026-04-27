@@ -19,6 +19,8 @@ export type Database = {
           id: string
           launched_at: string | null
           name: string
+          send_hour_start: number
+          send_hour_end: number
           status: string
           user_id: string
         }
@@ -28,6 +30,8 @@ export type Database = {
           id?: string
           launched_at?: string | null
           name: string
+          send_hour_start?: number
+          send_hour_end?: number
           status?: string
           user_id: string
         }
@@ -37,6 +41,8 @@ export type Database = {
           id?: string
           launched_at?: string | null
           name?: string
+          send_hour_start?: number
+          send_hour_end?: number
           status?: string
           user_id?: string
         }
@@ -359,6 +365,7 @@ export type Database = {
           condition_open_required: boolean
           delay_business_days: number
           id: string
+          linkedin_message_template: string | null
           step_index: number
           step_type: string
           subject: string | null
@@ -369,6 +376,7 @@ export type Database = {
           condition_open_required?: boolean
           delay_business_days?: number
           id?: string
+          linkedin_message_template?: string | null
           step_index: number
           step_type?: string
           subject?: string | null
@@ -379,6 +387,7 @@ export type Database = {
           condition_open_required?: boolean
           delay_business_days?: number
           id?: string
+          linkedin_message_template?: string | null
           step_index?: number
           step_type?: string
           subject?: string | null

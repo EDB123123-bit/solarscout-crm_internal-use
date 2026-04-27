@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import {
   deleteSequenceStepAction,
   updateSequenceStepTypeAction,
   updateSequenceStepDelayAction,
+  updateLinkedInTemplateAction,
 } from '@/app/(dashboard)/campaigns/new/actions'
 import type { Contact, SequenceStep } from '@/types'
 
@@ -69,11 +70,38 @@ type StepRowProps = {
   onRefresh: () => void
 }
 
+const LINKEDIN_VARIABLES = [
+  { token: '{{first_name}}', label: 'Voornaam' },
+  { token: '{{company_name}}', label: 'Bedrijfsnaam' },
+  { token: '{{surface_area}}', label: 'Oppervlakte' },
+]
+
 function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [templateOpen, setTemplateOpen] = useState(false)
+  const [templateText, setTemplateText] = useState(step.linkedin_message_template ?? '')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isFirst = step.step_index === 0
   const configured = isEmailConfigured(step)
+  const hasTemplate = !!step.linkedin_message_template
+
+  function insertToken(token: string) {
+    const el = textareaRef.current
+    if (!el) {
+      setTemplateText(prev => prev + token)
+      return
+    }
+    const start = el.selectionStart ?? templateText.length
+    const end = el.selectionEnd ?? templateText.length
+    const next = templateText.slice(0, start) + token + templateText.slice(end)
+    setTemplateText(next)
+    requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + token.length
+      el.setSelectionRange(pos, pos)
+    })
+  }
 
   function changeType(newType: StepType) {
     if (newType === step.step_type) return
@@ -109,17 +137,31 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
     })
   }
 
+  function saveTemplate() {
+    startTransition(async () => {
+      try {
+        await updateLinkedInTemplateAction({ campaignId, stepId: step.id, template: templateText })
+        onRefresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Berichttekst opslaan mislukt.')
+      }
+    })
+  }
+
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      padding: '12px 16px',
       borderRadius: 8,
       border: '1px solid var(--border)',
       background: 'var(--card)',
       opacity: pending ? 0.6 : 1,
       transition: 'opacity 0.1s',
+      overflow: 'hidden',
+    }}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '12px 16px',
     }}>
       {/* Position badge */}
       <span style={{
@@ -229,6 +271,39 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
         </button>
       )}
 
+      {/* Template button (LinkedIn only) */}
+      {step.step_type === 'linkedin' && (
+        <button
+          onClick={() => setTemplateOpen(v => !v)}
+          disabled={pending}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '5px 10px', borderRadius: 6,
+            border: '1px solid var(--border)', background: 'transparent',
+            fontSize: 12, fontWeight: 500,
+            color: hasTemplate ? '#22c55e' : '#0A66C2',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {hasTemplate ? (
+            <>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 6l3 3 5-5" />
+              </svg>
+              Bericht opgesteld
+            </>
+          ) : (
+            <>
+              Berichttekst
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 2l4 4-4 4" />
+              </svg>
+            </>
+          )}
+        </button>
+      )}
+
       {/* Delete button (not for first step) */}
       {!isFirst && (
         <button
@@ -249,6 +324,54 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
           </svg>
         </button>
       )}
+    </div>
+
+    {/* LinkedIn template editor (inline expand) */}
+    {step.step_type === 'linkedin' && templateOpen && (
+      <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {LINKEDIN_VARIABLES.map((v) => (
+            <button
+              key={v.token}
+              type="button"
+              onMouseDown={e => { e.preventDefault(); insertToken(v.token) }}
+              style={{
+                padding: '3px 10px',
+                borderRadius: 5,
+                border: '1px solid var(--border)',
+                background: 'var(--muted)',
+                fontSize: 12,
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+              }}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <textarea
+          ref={textareaRef}
+          value={templateText}
+          onChange={e => setTemplateText(e.target.value)}
+          onBlur={saveTemplate}
+          placeholder="bv. Hallo {{first_name}}, ik zag dat {{company_name}} actief is in zonnepanelen. Ik zou graag even connecten om..."
+          rows={4}
+          style={{
+            width: '100%',
+            resize: 'vertical',
+            background: 'var(--muted)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: '8px 10px',
+            fontSize: 13,
+            color: 'var(--foreground)',
+            outline: 'none',
+            fontFamily: 'inherit',
+            lineHeight: 1.5,
+          }}
+        />
+      </div>
+    )}
     </div>
   )
 }
