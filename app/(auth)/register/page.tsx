@@ -30,7 +30,7 @@ export default function RegisterPage() {
     background: 'var(--input)',
     border: '1.5px solid var(--border)',
     borderRadius: 6,
-    color: '#FFFFFF',
+    color: 'var(--foreground)',
     fontSize: 14,
     outline: 'none',
     fontFamily: 'inherit',
@@ -91,6 +91,76 @@ export default function RegisterPage() {
       )}
 
       <form action={handleSubmit} className="flex flex-col gap-5">
+        {/* First + Last name side by side */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="flex flex-col gap-1.5">
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-foreground)' }} htmlFor="first_name">
+              Voornaam
+            </label>
+            <input
+              id="first_name"
+              name="first_name"
+              type="text"
+              placeholder="Jan"
+              required
+              autoComplete="given-name"
+              style={inputStyle}
+              onFocus={onFocus}
+              onBlur={onBlur}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-foreground)' }} htmlFor="last_name">
+              Achternaam
+            </label>
+            <input
+              id="last_name"
+              name="last_name"
+              type="text"
+              placeholder="Janssen"
+              required
+              autoComplete="family-name"
+              style={inputStyle}
+              onFocus={onFocus}
+              onBlur={onBlur}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-foreground)' }} htmlFor="company_name">
+            Bedrijfsnaam
+          </label>
+          <input
+            id="company_name"
+            name="company_name"
+            type="text"
+            placeholder="Mijn Bedrijf BV"
+            required
+            autoComplete="organization"
+            style={inputStyle}
+            onFocus={onFocus}
+            onBlur={onBlur}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-foreground)' }} htmlFor="company_vat">
+            BTW-nummer
+          </label>
+          <input
+            id="company_vat"
+            name="company_vat"
+            type="text"
+            placeholder="BE0123456789"
+            required
+            autoComplete="off"
+            style={inputStyle}
+            onFocus={onFocus}
+            onBlur={onBlur}
+          />
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted-foreground)' }} htmlFor="email">
             E-mailadres

@@ -81,7 +81,7 @@ export default function LoginPage() {
               background: 'var(--input)',
               border: '1.5px solid var(--border)',
               borderRadius: 6,
-              color: '#FFFFFF',
+              color: 'var(--foreground)',
               fontSize: 14,
               outline: 'none',
               fontFamily: 'inherit',
@@ -115,7 +115,7 @@ export default function LoginPage() {
               background: 'var(--input)',
               border: '1.5px solid var(--border)',
               borderRadius: 6,
-              color: '#FFFFFF',
+              color: 'var(--foreground)',
               fontSize: 14,
               outline: 'none',
               fontFamily: 'inherit',
@@ -129,6 +129,12 @@ export default function LoginPage() {
               e.target.style.boxShadow = 'none'
             }}
           />
+        </div>
+
+        <div style={{ textAlign: 'right', marginTop: -12 }}>
+          <Link href="/forgot-password" style={{ fontSize: 13, color: '#FFA500', textDecoration: 'none' }}>
+            Wachtwoord vergeten?
+          </Link>
         </div>
 
         <button

@@ -32,6 +32,20 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
 }
 
+const MAX_LINKEDIN_TEMPLATE_LEN = 2000
+const MAX_BODY_HTML_LEN = 50_000
+const MAX_SUBJECT_LEN = 200
+const MAX_NAME_LEN = 120
+
+function validateSendWindow(startHour: number, endHour: number): void {
+  if (!Number.isInteger(startHour) || !Number.isInteger(endHour))
+    throw new Error('Verzendvenster moet uit gehele uren bestaan.')
+  if (startHour < 6 || startHour > 20 || endHour < 6 || endHour > 20)
+    throw new Error('Verzendvenster moet tussen 6:00 en 20:00 vallen.')
+  if (endHour <= startHour)
+    throw new Error('Eindtijd moet na starttijd liggen.')
+}
+
 export async function createCampaignAction(
   name: string,
   sendHourStart: number = 8,
@@ -39,6 +53,8 @@ export async function createCampaignAction(
 ): Promise<{ id: string }> {
   const trimmed = name.trim()
   if (trimmed.length < 2) throw new Error('Naam moet minstens 2 tekens bevatten.')
+  if (trimmed.length > MAX_NAME_LEN) throw new Error(`Naam mag maximaal ${MAX_NAME_LEN} tekens bevatten.`)
+  validateSendWindow(sendHourStart, sendHourEnd)
 
   const { supabase, user } = await requireUser()
   const { data, error } = await supabase
@@ -60,6 +76,8 @@ export async function updateCampaignNameAction(
 ): Promise<void> {
   const trimmed = name.trim()
   if (trimmed.length < 2) throw new Error('Naam moet minstens 2 tekens bevatten.')
+  if (trimmed.length > MAX_NAME_LEN) throw new Error(`Naam mag maximaal ${MAX_NAME_LEN} tekens bevatten.`)
+  validateSendWindow(sendHourStart, sendHourEnd)
 
   const { supabase } = await requireDraftCampaign(id)
   const { error } = await supabase
@@ -83,8 +101,11 @@ export async function upsertSequenceStepAction(input: {
   if (input.stepType === 'email') {
     const subject = (input.subject ?? '').trim()
     if (subject.length === 0) throw new Error('Onderwerp mag niet leeg zijn.')
+    if (subject.length > MAX_SUBJECT_LEN) throw new Error(`Onderwerp mag maximaal ${MAX_SUBJECT_LEN} tekens bevatten.`)
     if (stripHtml(input.bodyHtml ?? '').length === 0)
       throw new Error('Bericht mag niet leeg zijn.')
+    if ((input.bodyHtml ?? '').length > MAX_BODY_HTML_LEN)
+      throw new Error('Bericht is te lang.')
   }
   if (input.stepIndex !== 0) {
     if (
@@ -191,10 +212,14 @@ export async function updateLinkedInTemplateAction(input: {
   stepId: string
   template: string
 }): Promise<void> {
+  const trimmed = input.template.trim()
+  if (trimmed.length > MAX_LINKEDIN_TEMPLATE_LEN)
+    throw new Error(`Berichttekst mag maximaal ${MAX_LINKEDIN_TEMPLATE_LEN} tekens bevatten.`)
+
   const { supabase } = await requireDraftCampaign(input.campaignId)
   const { error } = await supabase
     .from('sequence_steps')
-    .update({ linkedin_message_template: input.template.trim() || null })
+    .update({ linkedin_message_template: trimmed || null })
     .eq('id', input.stepId)
     .eq('campaign_id', input.campaignId)
   if (error) throw new Error(`Berichttekst opslaan mislukt: ${error.message}`)
@@ -239,12 +264,6 @@ export async function launchCampaignAction(
   if (!contacts || contacts.length === 0)
     throw new Error('Importeer eerst minstens één contact.')
 
-  const { error: updateError } = await supabase
-    .from('campaigns')
-    .update({ status: 'active', launched_at: new Date().toISOString() })
-    .eq('id', campaign.id)
-  if (updateError) throw new Error(`Campagne starten mislukt: ${updateError.message}`)
-
   const startHour = (campaign as any).send_hour_start ?? 8
   const endHour   = (campaign as any).send_hour_end   ?? 18
 
@@ -285,9 +304,23 @@ export async function launchCampaignAction(
       }
     }
     if (taskRows.length > 0) {
-      await supabase.from('contact_tasks').insert(taskRows)
+      const { error: taskError } = await supabase.from('contact_tasks').insert(taskRows)
+      if (taskError) {
+        await supabase.from('scheduled_sends')
+          .delete()
+          .in('contact_id', contacts.map((c) => c.id))
+          .is('sent_at', null)
+        throw new Error(`Taken aanmaken mislukt: ${taskError.message}`)
+      }
     }
   }
+
+  // Flip status last so partial failures above leave the campaign as draft and replayable.
+  const { error: updateError } = await supabase
+    .from('campaigns')
+    .update({ status: 'active', launched_at: new Date().toISOString() })
+    .eq('id', campaign.id)
+  if (updateError) throw new Error(`Campagne starten mislukt: ${updateError.message}`)
 
   revalidatePath('/campaigns/new')
   revalidatePath(`/campaigns/${campaign.id}`)

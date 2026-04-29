@@ -36,6 +36,14 @@ export async function register(formData: FormData) {
   const { error } = await supabase.auth.signUp({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
+    options: {
+      data: {
+        first_name: (formData.get('first_name') as string)?.trim() ?? '',
+        last_name: (formData.get('last_name') as string)?.trim() ?? '',
+        company_name: (formData.get('company_name') as string)?.trim() ?? '',
+        company_vat: (formData.get('company_vat') as string)?.trim() ?? '',
+      },
+    },
   })
 
   if (error) {
@@ -47,6 +55,26 @@ export async function register(formData: FormData) {
 
   revalidatePath('/', 'layout')
   redirect('/')
+}
+
+export async function forgotPassword(formData: FormData) {
+  let supabase
+  try {
+    supabase = await createClient()
+  } catch {
+    return { success: true }
+  }
+
+  const email = (formData.get('email') as string)?.trim()
+  if (!email) return { error: 'Vul je e-mailadres in.' }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/reset-password`,
+  })
+
+  // Always return success to prevent email enumeration.
+  return { success: true }
 }
 
 export async function logout() {

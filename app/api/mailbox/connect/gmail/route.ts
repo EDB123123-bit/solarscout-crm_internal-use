@@ -105,7 +105,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       return response
     }
 
-    const response = NextResponse.redirect(new URL('/settings', req.url))
+    const response = NextResponse.redirect(new URL('/', req.url))
     clearStateCookie(response)
     return response
   }

@@ -11,6 +11,14 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: mailbox } = await supabase
+    .from('mailbox_connections')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('status', 'connected')
+    .maybeSingle()
+  if (!mailbox) redirect('/onboarding')
+
   // KPI: emails sent
   const { count: emailsSent } = await supabase
     .from('scheduled_sends')

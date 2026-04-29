@@ -1,4 +1,8 @@
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not found', { status: 404 })
+  }
+
   const html = `
     <!DOCTYPE html>
     <html>
