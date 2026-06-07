@@ -51,7 +51,7 @@ export default async function DashboardLayout({
         >
           <SolarScoutLogo width={120} />
           <div style={{ fontSize: 10, color: 'var(--sc-faint)', fontWeight: 500, paddingLeft: 1 }}>
-            Outreach Tool
+            Outreach Tool — INTERNAL USE
           </div>
         </div>
 

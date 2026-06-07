@@ -32,7 +32,7 @@ export default function LoginPage() {
       {/* Logo */}
       <div className="flex flex-col items-center gap-2 mb-8">
         <SolarScoutLogo width={180} />
-        <div style={{ fontSize: 11, color: 'var(--sc-faint)' }}>Outreach Tool</div>
+        <div style={{ fontSize: 11, color: 'var(--sc-faint)' }}>Outreach Tool — INTERNAL USE</div>
       </div>
 
       <div style={{ height: 1, background: 'var(--border)', marginBottom: 28 }} />

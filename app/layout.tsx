@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SolarScout Outreach Tool",
-  description: "Beheer uw koude e-mailcampagnes voor zonnepanelen",
+  title: "Outreach Tool — Internal Use",
+  description: "Automated outreach — internal use",
 };
 
 export default function RootLayout({
