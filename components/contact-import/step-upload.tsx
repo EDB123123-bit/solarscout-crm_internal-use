@@ -30,8 +30,8 @@ export function StepUpload({ onFileSelected, error }: Props) {
           <p className="text-sm text-destructive">{error}</p>
         )}
         <div className="text-xs text-muted-foreground">
-          Verwachte kolommen: Voornaam, Achternaam, Bedrijfsnaam, E-mailadres,
-          Telefoon, Adres, Leadtype, Oppervlakte.
+          Ondersteunde formaten: eigen spreadsheet of een Apollo.io CSV-export.
+          Verplichte velden: voornaam en e-mailadres.
         </div>
       </CardContent>
     </Card>

@@ -138,19 +138,10 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
               <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bedrijf</div>
               <InfoRow label="Naam" value={contact.company_name} />
               <InfoRow label="Adres" value={contact.address} />
+              <InfoRow label="Stad" value={contact.city} />
               <InfoRow label="Telefoon" value={contact.general_phone} />
               <LinkRow label="Website" href={contact.website} display={contact.website} />
               <InfoRow label="NACE-sector" value={contact.nace_industry} />
-              {contact.company_roof_picture && (
-                <div className="pt-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={contact.company_roof_picture}
-                    alt="Dakfoto"
-                    style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)', display: 'block' }}
-                  />
-                </div>
-              )}
             </div>
 
             <hr style={{ borderColor: 'var(--border)' }} />
@@ -166,11 +157,9 @@ export default async function LeadDetailPage({ params }: { params: Params }) {
 
             <hr style={{ borderColor: 'var(--border)' }} />
 
-            {/* Lead & status */}
+            {/* Status */}
             <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lead & status</div>
-              <InfoRow label="Type lead" value={contact.lead_type} />
-              <InfoRow label="Oppervlakte" value={contact.surface_area} />
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</div>
               <div className="flex items-center gap-2 pt-1">
                 <span className="w-28 shrink-0 text-muted-foreground">Status</span>
                 <Badge variant={CONTACT_STATUS_VARIANT[contact.status] ?? 'outline'}>

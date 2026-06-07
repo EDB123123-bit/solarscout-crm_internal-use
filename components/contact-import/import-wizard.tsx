@@ -137,9 +137,7 @@ export function ImportWizard({ campaignId }: Props) {
           if (r.email) rest.email = r.email
           if (r.phone) rest.phone = r.phone
           if (r.address) rest.address = r.address
-          if (r.lead_type) rest.lead_type = r.lead_type
-          if (r.surface_area) rest.surface_area = r.surface_area
-          if (r.company_roof_picture) rest.company_roof_picture = r.company_roof_picture
+          if (r.city) rest.city = r.city
           if (r.general_phone) rest.general_phone = r.general_phone
           if (r.website) rest.website = r.website
           if (r.nace_industry) rest.nace_industry = r.nace_industry

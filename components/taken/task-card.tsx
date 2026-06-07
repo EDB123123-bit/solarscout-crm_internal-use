@@ -19,6 +19,7 @@ type TaskCardProps = {
   dueLabel: string
   urgent: boolean
   linkedinTemplate: string | null
+  callScript: string | null
 }
 
 function LinkedInIcon() {
@@ -40,15 +41,17 @@ function PhoneIcon() {
 export function TaskCard({
   taskId, taskType, firstName, lastName, companyName,
   linkedinUrl, phone, campaignName, campaignId, contactId,
-  dueLabel, urgent, linkedinTemplate,
+  dueLabel, urgent, linkedinTemplate, callScript,
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [notes, setNotes] = useState('')
   const [copied, setCopied] = useState(false)
+  const [copiedCall, setCopiedCall] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isLinkedIn = taskType === 'linkedin'
+  const isPhone = taskType === 'phone'
 
   useEffect(() => {
     if (expanded) textareaRef.current?.focus()
@@ -59,6 +62,14 @@ export function TaskCard({
     navigator.clipboard.writeText(linkedinTemplate).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function copyCallScript() {
+    if (!callScript) return
+    navigator.clipboard.writeText(callScript).then(() => {
+      setCopiedCall(true)
+      setTimeout(() => setCopiedCall(false), 2000)
     })
   }
 
@@ -238,6 +249,59 @@ export function TaskCard({
                 whiteSpace: 'pre-wrap',
               }}>
                 {linkedinTemplate}
+              </div>
+            </div>
+          )}
+
+          {isPhone && callScript && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted-foreground)' }}>
+                  Belscript
+                </span>
+                <button
+                  type="button"
+                  onClick={copyCallScript}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '4px 10px', borderRadius: 5,
+                    border: '1px solid var(--border)',
+                    background: copiedCall ? 'rgba(34,197,94,0.1)' : 'transparent',
+                    fontSize: 12, fontWeight: 500,
+                    color: copiedCall ? '#22C55E' : 'var(--sc-orange, #f97316)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {copiedCall ? (
+                    <>
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1.5 6l3 3 6-6" />
+                      </svg>
+                      Gekopieerd
+                    </>
+                  ) : (
+                    <>
+                      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="4" y="4" width="8" height="9" rx="1.5" />
+                        <path d="M2 9.5V2.5A1.5 1.5 0 0 1 3.5 1h6" />
+                      </svg>
+                      Kopieer
+                    </>
+                  )}
+                </button>
+              </div>
+              <div style={{
+                background: 'rgba(249,115,22,0.06)',
+                border: '1px solid rgba(249,115,22,0.2)',
+                borderRadius: 6,
+                padding: '10px 12px',
+                fontSize: 13,
+                color: 'var(--foreground)',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {callScript}
               </div>
             </div>
           )}

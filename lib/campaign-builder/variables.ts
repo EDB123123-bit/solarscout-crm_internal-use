@@ -11,9 +11,7 @@ export const RENDER_VARIABLES: RenderVariable[] = [
   { token: '{{first_name}}', label: 'Voornaam', field: 'first_name' },
   { token: '{{company_name}}', label: 'Bedrijfsnaam', field: 'company_name' },
   { token: '{{address}}', label: 'Adres', field: 'address' },
-  { token: '{{lead_type}}', label: 'Leadtype', field: 'lead_type' },
-  { token: '{{surface_area}}', label: 'Oppervlakte', field: 'surface_area' },
-  { token: '{{company_roof_picture}}', label: 'Dakfoto', field: 'company_roof_picture', isImage: true },
+  { token: '{{city}}', label: 'Stad', field: 'city' },
 ]
 
 export function resolveVariables(

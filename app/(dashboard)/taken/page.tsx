@@ -12,10 +12,10 @@ type TaskRow = {
   first_name: string
   last_name: string | null
   company_name: string | null
+  city: string | null
   phone: string | null
   general_phone: string | null
   linkedin_url: string | null
-  surface_area: string | null
   campaign_name: string
 }
 
@@ -38,7 +38,7 @@ export default async function TakenPage() {
     .from('contact_tasks')
     .select(`
       id, task_type, due_at, contact_id, campaign_id,
-      contacts!inner ( first_name, last_name, company_name, phone, general_phone, linkedin_url, surface_area ),
+      contacts!inner ( first_name, last_name, company_name, city, phone, general_phone, linkedin_url ),
       campaigns!inner ( name, user_id )
     `)
     .eq('campaigns.user_id', user.id)
@@ -54,10 +54,10 @@ export default async function TakenPage() {
     first_name: r.contacts.first_name,
     last_name: r.contacts.last_name,
     company_name: r.contacts.company_name,
+    city: r.contacts.city,
     phone: r.contacts.phone,
     general_phone: r.contacts.general_phone,
     linkedin_url: r.contacts.linkedin_url,
-    surface_area: r.contacts.surface_area,
     campaign_name: r.campaigns.name,
   }))
 
@@ -92,19 +92,35 @@ export default async function TakenPage() {
     })
   }
 
-  // Fetch LinkedIn message templates for all relevant campaigns
+  // Fetch LinkedIn message templates and call scripts for all relevant campaigns
   const linkedInTasks = tasks.filter(t => t.task_type === 'linkedin')
-  const campaignIds = [...new Set(linkedInTasks.map(t => t.campaign_id))]
+  const phoneTasks = tasks.filter(t => t.task_type === 'phone')
+  const linkedInCampaignIds = [...new Set(linkedInTasks.map(t => t.campaign_id))]
+  const phoneCampaignIds = [...new Set(phoneTasks.map(t => t.campaign_id))]
   const templateByCampaign: Record<string, string | null> = {}
-  if (campaignIds.length > 0) {
+  const callScriptByCampaign: Record<string, string | null> = {}
+
+  if (linkedInCampaignIds.length > 0) {
     const { data: steps } = await supabase
       .from('sequence_steps')
       .select('campaign_id, linkedin_message_template')
-      .in('campaign_id', campaignIds)
+      .in('campaign_id', linkedInCampaignIds)
       .eq('step_type', 'linkedin')
       .not('linkedin_message_template', 'is', null)
     for (const s of steps ?? []) {
       templateByCampaign[s.campaign_id] = s.linkedin_message_template
+    }
+  }
+
+  if (phoneCampaignIds.length > 0) {
+    const { data: steps } = await supabase
+      .from('sequence_steps')
+      .select('campaign_id, call_script_template')
+      .in('campaign_id', phoneCampaignIds)
+      .eq('step_type', 'phone')
+      .not('call_script_template', 'is', null)
+    for (const s of steps ?? []) {
+      callScriptByCampaign[s.campaign_id] = s.call_script_template
     }
   }
 
@@ -144,18 +160,27 @@ export default async function TakenPage() {
 
         {tasks.map((task) => {
           const { label: dueLabel, urgent } = formatDueDate(task.due_at)
-          const rawTemplate = task.task_type === 'linkedin'
+          const contactData = {
+            first_name: task.first_name,
+            last_name: task.last_name ?? '',
+            company_name: task.company_name ?? '',
+            city: task.city ?? '',
+          } as any
+
+          const rawLinkedinTemplate = task.task_type === 'linkedin'
             ? (templateByCampaign[task.campaign_id] ?? null)
             : null
-          // Resolve {{first_name}} etc. using the contact's data
-          const resolvedTemplate = rawTemplate
-            ? resolveVariables(rawTemplate, {
-                first_name: task.first_name,
-                last_name: task.last_name ?? '',
-                company_name: task.company_name ?? '',
-                surface_area: task.surface_area ?? '',
-              } as any)
+          const resolvedTemplate = rawLinkedinTemplate
+            ? resolveVariables(rawLinkedinTemplate, contactData)
             : null
+
+          const rawCallScript = task.task_type === 'phone'
+            ? (callScriptByCampaign[task.campaign_id] ?? null)
+            : null
+          const resolvedCallScript = rawCallScript
+            ? resolveVariables(rawCallScript, contactData)
+            : null
+
           return (
             <TaskCard
               key={task.id}
@@ -172,6 +197,7 @@ export default async function TakenPage() {
               dueLabel={dueLabel}
               urgent={urgent}
               linkedinTemplate={resolvedTemplate}
+              callScript={resolvedCallScript}
             />
           )
         })}

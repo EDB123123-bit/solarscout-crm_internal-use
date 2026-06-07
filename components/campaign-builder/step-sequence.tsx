@@ -11,6 +11,7 @@ import {
   updateSequenceStepTypeAction,
   updateSequenceStepDelayAction,
   updateLinkedInTemplateAction,
+  updateCallScriptAction,
 } from '@/app/(dashboard)/campaigns/new/actions'
 import type { Contact, SequenceStep } from '@/types'
 
@@ -70,10 +71,10 @@ type StepRowProps = {
   onRefresh: () => void
 }
 
-const LINKEDIN_VARIABLES = [
+const TASK_VARIABLES = [
   { token: '{{first_name}}', label: 'Voornaam' },
   { token: '{{company_name}}', label: 'Bedrijfsnaam' },
-  { token: '{{surface_area}}', label: 'Oppervlakte' },
+  { token: '{{city}}', label: 'Stad' },
 ]
 
 function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
@@ -81,10 +82,14 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
   const [pending, startTransition] = useTransition()
   const [templateOpen, setTemplateOpen] = useState(false)
   const [templateText, setTemplateText] = useState(step.linkedin_message_template ?? '')
+  const [callScriptOpen, setCallScriptOpen] = useState(false)
+  const [callScriptText, setCallScriptText] = useState(step.call_script_template ?? '')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const callTextareaRef = useRef<HTMLTextAreaElement>(null)
   const isFirst = step.step_index === 0
   const configured = isEmailConfigured(step)
   const hasTemplate = !!step.linkedin_message_template
+  const hasCallScript = !!step.call_script_template
 
   function insertToken(token: string) {
     const el = textareaRef.current
@@ -96,6 +101,23 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
     const end = el.selectionEnd ?? templateText.length
     const next = templateText.slice(0, start) + token + templateText.slice(end)
     setTemplateText(next)
+    requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + token.length
+      el.setSelectionRange(pos, pos)
+    })
+  }
+
+  function insertCallToken(token: string) {
+    const el = callTextareaRef.current
+    if (!el) {
+      setCallScriptText(prev => prev + token)
+      return
+    }
+    const start = el.selectionStart ?? callScriptText.length
+    const end = el.selectionEnd ?? callScriptText.length
+    const next = callScriptText.slice(0, start) + token + callScriptText.slice(end)
+    setCallScriptText(next)
     requestAnimationFrame(() => {
       el.focus()
       const pos = start + token.length
@@ -144,6 +166,17 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
         onRefresh()
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Berichttekst opslaan mislukt.')
+      }
+    })
+  }
+
+  function saveCallScript() {
+    startTransition(async () => {
+      try {
+        await updateCallScriptAction({ campaignId, stepId: step.id, template: callScriptText })
+        onRefresh()
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Belscript opslaan mislukt.')
       }
     })
   }
@@ -304,6 +337,39 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
         </button>
       )}
 
+      {/* Script button (phone only) */}
+      {step.step_type === 'phone' && (
+        <button
+          onClick={() => setCallScriptOpen(v => !v)}
+          disabled={pending}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '5px 10px', borderRadius: 6,
+            border: '1px solid var(--border)', background: 'transparent',
+            fontSize: 12, fontWeight: 500,
+            color: hasCallScript ? '#22c55e' : 'var(--sc-orange, #f97316)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {hasCallScript ? (
+            <>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 6l3 3 5-5" />
+              </svg>
+              Script opgesteld
+            </>
+          ) : (
+            <>
+              Belscript
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 2l4 4-4 4" />
+              </svg>
+            </>
+          )}
+        </button>
+      )}
+
       {/* Delete button (not for first step) */}
       {!isFirst && (
         <button
@@ -330,7 +396,7 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
     {step.step_type === 'linkedin' && templateOpen && (
       <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {LINKEDIN_VARIABLES.map((v) => (
+          {TASK_VARIABLES.map((v) => (
             <button
               key={v.token}
               type="button"
@@ -354,7 +420,54 @@ function StepRow({ step, position, campaignId, onRefresh }: StepRowProps) {
           value={templateText}
           onChange={e => setTemplateText(e.target.value)}
           onBlur={saveTemplate}
-          placeholder="bv. Hallo {{first_name}}, ik zag dat {{company_name}} actief is in zonnepanelen. Ik zou graag even connecten om..."
+          placeholder="bv. Hallo {{first_name}}, ik zag dat {{company_name}} actief is in de regio {{city}}. Ik zou graag even connecten om..."
+          rows={4}
+          style={{
+            width: '100%',
+            resize: 'vertical',
+            background: 'var(--muted)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            padding: '8px 10px',
+            fontSize: 13,
+            color: 'var(--foreground)',
+            outline: 'none',
+            fontFamily: 'inherit',
+            lineHeight: 1.5,
+          }}
+        />
+      </div>
+    )}
+
+    {/* Phone script editor (inline expand) */}
+    {step.step_type === 'phone' && callScriptOpen && (
+      <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {TASK_VARIABLES.map((v) => (
+            <button
+              key={v.token}
+              type="button"
+              onMouseDown={e => { e.preventDefault(); insertCallToken(v.token) }}
+              style={{
+                padding: '3px 10px',
+                borderRadius: 5,
+                border: '1px solid var(--border)',
+                background: 'var(--muted)',
+                fontSize: 12,
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+              }}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <textarea
+          ref={callTextareaRef}
+          value={callScriptText}
+          onChange={e => setCallScriptText(e.target.value)}
+          onBlur={saveCallScript}
+          placeholder="bv. Hallo, ik ben op zoek naar {{first_name}} van {{company_name}} in {{city}}. Ik bel in verband met..."
           rows={4}
           style={{
             width: '100%',

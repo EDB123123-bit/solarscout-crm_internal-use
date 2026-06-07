@@ -52,6 +52,7 @@ export type Database = {
         Row: {
           address: string | null
           campaign_id: string
+          city: string | null
           company_name: string | null
           company_roof_picture: string | null
           contact_function: string | null
@@ -77,6 +78,7 @@ export type Database = {
         Insert: {
           address?: string | null
           campaign_id: string
+          city?: string | null
           company_name?: string | null
           company_roof_picture?: string | null
           contact_function?: string | null
@@ -102,6 +104,7 @@ export type Database = {
         Update: {
           address?: string | null
           campaign_id?: string
+          city?: string | null
           company_name?: string | null
           company_roof_picture?: string | null
           contact_function?: string | null
@@ -361,6 +364,7 @@ export type Database = {
       sequence_steps: {
         Row: {
           body_html: string | null
+          call_script_template: string | null
           campaign_id: string
           condition_open_required: boolean
           delay_business_days: number
@@ -372,6 +376,7 @@ export type Database = {
         }
         Insert: {
           body_html?: string | null
+          call_script_template?: string | null
           campaign_id: string
           condition_open_required?: boolean
           delay_business_days?: number
@@ -383,6 +388,7 @@ export type Database = {
         }
         Update: {
           body_html?: string | null
+          call_script_template?: string | null
           campaign_id?: string
           condition_open_required?: boolean
           delay_business_days?: number

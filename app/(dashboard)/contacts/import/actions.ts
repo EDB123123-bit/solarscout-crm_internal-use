@@ -140,9 +140,7 @@ export async function commitImportAction(input: {
     company_name: string | null
     phone: string | null
     address: string | null
-    lead_type: string | null
-    surface_area: string | null
-    company_roof_picture: string | null
+    city: string | null
     general_phone: string | null
     website: string | null
     nace_industry: string | null
@@ -165,9 +163,7 @@ export async function commitImportAction(input: {
       company_name: row.company_name ?? null,
       phone: row.phone ?? null,
       address: row.address ?? null,
-      lead_type: row.lead_type ?? null,
-      surface_area: row.surface_area ?? null,
-      company_roof_picture: row.company_roof_picture ?? null,
+      city: row.city ?? null,
       general_phone: row.general_phone ?? null,
       website: row.website ?? null,
       nace_industry: row.nace_industry ?? null,

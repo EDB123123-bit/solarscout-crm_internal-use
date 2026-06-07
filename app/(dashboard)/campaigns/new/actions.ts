@@ -227,6 +227,26 @@ export async function updateLinkedInTemplateAction(input: {
   revalidatePath('/campaigns/new')
 }
 
+export async function updateCallScriptAction(input: {
+  campaignId: string
+  stepId: string
+  template: string
+}): Promise<void> {
+  const trimmed = input.template.trim()
+  if (trimmed.length > MAX_LINKEDIN_TEMPLATE_LEN)
+    throw new Error(`Belscript mag maximaal ${MAX_LINKEDIN_TEMPLATE_LEN} tekens bevatten.`)
+
+  const { supabase } = await requireDraftCampaign(input.campaignId)
+  const { error } = await supabase
+    .from('sequence_steps')
+    .update({ call_script_template: trimmed || null })
+    .eq('id', input.stepId)
+    .eq('campaign_id', input.campaignId)
+  if (error) throw new Error(`Belscript opslaan mislukt: ${error.message}`)
+
+  revalidatePath('/campaigns/new')
+}
+
 export async function deleteSequenceStepAction(input: {
   campaignId: string
   stepId: string

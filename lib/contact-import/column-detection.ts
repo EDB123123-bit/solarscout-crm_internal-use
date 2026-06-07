@@ -61,37 +61,12 @@ const ALIASES: Record<ExpectedColumn, string[]> = {
     'mobiel',
     'phone number contact person',
     'telefoonnummer contactpersoon',
+    'work direct phone',
+    'mobile phone',
+    'home phone',
   ],
   address: ['address', 'adres', 'straat', 'street', 'location', 'locatie', 'company adress', 'company address'],
-  lead_type: [
-    'lead_type',
-    'leadtype',
-    'lead type',
-    'type',
-    'soort',
-    'soort lead',
-  ],
-  surface_area: [
-    'surface_area',
-    'surfacearea',
-    'surface area',
-    'surface',
-    'area',
-    'oppervlakte',
-    'oppervlak',
-    'dakoppervlak',
-    'm2',
-    'm²',
-  ],
-  company_roof_picture: [
-    'company_roof_picture',
-    'company roof picture',
-    'roof picture',
-    'dakfoto',
-    'satellietfoto',
-    'roof image',
-    'dakafbeelding',
-  ],
+  city: ['city', 'stad', 'gemeente', 'woonplaats', 'place', 'plaats'],
   general_phone: [
     'general_phone',
     'general phone',
@@ -99,6 +74,7 @@ const ALIASES: Record<ExpectedColumn, string[]> = {
     'company phone',
     'bedrijfstelefoon',
     'algemeen telefoonnummer',
+    'corporate phone',
   ],
   website: [
     'website',
@@ -114,6 +90,7 @@ const ALIASES: Record<ExpectedColumn, string[]> = {
     'sector',
     'industrie',
     'branche',
+    'industry',
   ],
   contact_function: [
     'contact_function',
@@ -131,6 +108,7 @@ const ALIASES: Record<ExpectedColumn, string[]> = {
     'linkedin',
     'linkedin profiel',
     'linkedin profile',
+    'person linkedin url',
   ],
 }
 
@@ -174,7 +152,7 @@ export function applyMapping(
       if (!header) continue
       const raw = row[header]
       if (raw === null || raw === undefined) continue
-      const str = String(raw).trim()
+      const str = String(raw).trim().replace(/^'/, '')
       if (str.length === 0) continue
       out[col] = str
     }
